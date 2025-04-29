@@ -99,7 +99,7 @@ export class AuthService {
             admin
         })
         await this.otpRepository.save(otp);
-                console.log(`LOGIN OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
+        // console.log(`LOGIN OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
 
         
         await this.mailService.sendOtpEmail(admin.email, otpCode);
