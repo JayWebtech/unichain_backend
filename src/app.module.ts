@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UniversityModule } from './modules/university/university.module';
+import { SupportModule } from './modules/support/support.module';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
 import { CustomMailerModule } from './mailer/mailer.module';
@@ -19,6 +20,7 @@ import { CustomMailerModule } from './mailer/mailer.module';
     UsersModule,
     AuthModule,
     UniversityModule,
+    SupportModule,
     CustomMailerModule,
   ],
   controllers: [AppController],
