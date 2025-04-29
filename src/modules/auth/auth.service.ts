@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { getAddress } from 'ethers';
 
-// Simple in-memory rate limiting
+// Rate limit record interface
 interface RateLimitRecord {
   count: number;
   firstAttempt: number;
@@ -31,32 +31,32 @@ export class AuthService {
   ) {}
 
   private checkRateLimit(
-    email: string,
+    key: string,
     store: Map<string, RateLimitRecord>,
     maxAttempts: number,
     windowMs: number,
     errorMessage: string,
   ): void {
     const now = Date.now();
-    const record = store.get(email);
+    const record = store.get(key);
 
     if (record) {
       if (now - record.firstAttempt > windowMs) {
-        store.set(email, { count: 1, firstAttempt: now });
+        store.set(key, { count: 1, firstAttempt: now });
       } else if (record.count >= maxAttempts) {
         throw new BadRequestException(errorMessage);
       } else {
-        store.set(email, {
+        store.set(key, {
           count: record.count + 1,
           firstAttempt: record.firstAttempt,
         });
       }
     } else {
-      store.set(email, { count: 1, firstAttempt: now });
+      store.set(key, { count: 1, firstAttempt: now });
     }
   }
 
-  async validatePassword(email: string, password: string): Promise<any> {
+  async validatePassword(email: string, password: string): Promise<{ token: string }> {
     this.checkRateLimit(
       email,
       this.passwordAttempts,
@@ -78,7 +78,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async generateOtp(email: string): Promise<any> {
+  async generateOtp(email: string): Promise<{ message: string; otp?: string }> {
     this.checkRateLimit(
       email,
       this.otpAttempts,
@@ -101,8 +101,7 @@ export class AuthService {
     user.otpAttempts = 0;
     await this.usersRepository.save(user);
 
-    const isDevelopment =
-      this.configService.get<string>('NODE_ENV') === 'development';
+    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
 
     return {
       message: 'OTP sent successfully',
@@ -110,7 +109,7 @@ export class AuthService {
     };
   }
 
-  async verifyOtp(email: string, otp: string): Promise<any> {
+  async verifyOtp(email: string, otp: string): Promise<{ token: string }> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -126,9 +125,7 @@ export class AuthService {
     }
 
     if (user.otpAttempts >= 3) {
-      throw new BadRequestException(
-        'Too many failed attempts. Request a new OTP',
-      );
+      throw new BadRequestException('Too many failed attempts. Request a new OTP');
     }
 
     const isMatch = await bcrypt.compare(otp, user.otp);
@@ -146,41 +143,32 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async validateWalletAddress(
-    email: string,
-    walletAddress: string,
-  ): Promise<any> {
+  async validateWalletAddress(email: string, walletAddress: string): Promise<{ token: string }> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
     if (!user.walletAddress) {
-      throw new BadRequestException(
-        'No wallet address registered for this user',
-      );
+      throw new BadRequestException('No wallet address registered for this user');
     }
 
     try {
-      getAddress(walletAddress);
+      getAddress(walletAddress); // Validates checksum
     } catch (error) {
       throw new BadRequestException('Invalid wallet address format');
     }
 
     if (walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
-      throw new UnauthorizedException(
-        'Wallet address does not match registered address',
-      );
+      throw new UnauthorizedException('Wallet address does not match registered address');
     }
 
     return this.generateToken(user);
   }
 
-  // ✅ Here is the missing generateToken method
   private generateToken(user: User): { token: string } {
     const payload = { sub: user.id, email: user.email };
-    return {
-      token: this.jwtService.sign(payload),
-    };
+    const token = this.jwtService.sign(payload);
+    return { token };
   }
 }
