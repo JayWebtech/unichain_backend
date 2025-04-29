@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm';
-import * as path from 'path';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Use path.join for cross-platform path resolution
+// We use require instead of import to avoid TypeScript path resolution issues
+// with the TypeORM CLI
 const dataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -12,8 +12,8 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'certiva',
-  entities: [path.join(__dirname, 'entities', 'verification-log.entity.{ts,js}')],
-  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
+  entities: ['src/entities/**/*.entity.ts'],
+  migrations: ['src/migrations/**/*.ts'],
   synchronize: false
 });
 
