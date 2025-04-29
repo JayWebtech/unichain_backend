@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin } from './entities/admin.entity';
 import { OTP } from './entities/otp.entity';
@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { LoginAdminDto } from './dto/admin-login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { SignupAdminDto } from './dto/admin-signup.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,53 @@ export class AuthService {
         private otpUtil: OTPUtil, 
         private jwtService: JwtService
     ){}
+
+    async signupAdmin(signupAdminDto: SignupAdminDto){
+        if (signupAdminDto.password !== signupAdminDto.passwordConfirm){
+            throw new BadRequestException("Passwords do not match")
+        }
+
+        const existingAdmin = await this.adminRepository.findOne({where: {email: signupAdminDto.email}})
+
+        if (existingAdmin){
+            throw new BadRequestException("Admin already exists")
+        }
+
+        // hash password
+        const hashedPassword = await bcrypt.hash(signupAdminDto.password, 10)
+
+        // create new admin
+        const admin = this.adminRepository.create({
+            email: signupAdminDto.email,
+            password: hashedPassword,
+        })
+
+        // save admin 
+        await this.adminRepository.save(admin);
+
+        // geneare and send otp for signup verificaition
+        const otpCode = this.otpUtil.generateOTP();
+        const expiresAt = this.otpUtil.getOTPExpiration();
+        const otp = this.otpRepository.create({
+            code: otpCode,
+            expiresAt,
+            admin
+        })
+
+        await this.otpRepository.save(otp);
+        // console.log(`SIGNUP OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
+
+        return {
+            message: "Admin created successfully. OTP sent to email for verification",
+            email: admin.email,
+        }
+        
+        
+        
+        
+        
+    }
+
     async validateAdmin(email:string, password:string){
         const admin =  await this.adminRepository.findOne({where:{email}})
 
@@ -46,12 +94,13 @@ export class AuthService {
             admin
         })
         await this.otpRepository.save(otp);
+                console.log(`LOGIN OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
+
         
         // TODO SEND OTP TO ADMIN EMAIL 
         return {
             message : "OTP sent to your email", 
             email : admin.email, 
-            otpId : otp.id, //TODO REMOVE THIS FROM RESPONSE (FOR TESTING PURPOSES ONLY)
         }
 
         
