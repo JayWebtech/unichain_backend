@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginAdminDto } from './dto/admin-login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { SignupAdminDto } from './dto/admin-signup.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,8 @@ export class AuthService {
         @InjectRepository(OTP)
         private otpRepository: Repository<OTP>,
         private otpUtil: OTPUtil, 
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private readonly mailService:MailService
     ){}
 
     async signupAdmin(signupAdminDto: SignupAdminDto){
@@ -55,6 +57,9 @@ export class AuthService {
 
         await this.otpRepository.save(otp);
         // console.log(`SIGNUP OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
+        
+        // send otp to admin email
+        await this.mailService.sendOtpEmail(admin.email, otpCode);
 
         return {
             message: "Admin created successfully. OTP sent to email for verification",
@@ -97,7 +102,8 @@ export class AuthService {
                 console.log(`LOGIN OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
 
         
-        // TODO SEND OTP TO ADMIN EMAIL 
+        await this.mailService.sendOtpEmail(admin.email, otpCode);
+                
         return {
             message : "OTP sent to your email", 
             email : admin.email, 
