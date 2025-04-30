@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UniversityModule } from './modules/university/university.module';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
-import { VerificationLogsModule } from './modules/verification-logs/verification-logs.module'; // <-- New import
-
+import { VerificationLogsModule } from './modules/verification-logs/verification-logs.module';
 @Module({
   imports: [
     ConfigModule.forRoot({

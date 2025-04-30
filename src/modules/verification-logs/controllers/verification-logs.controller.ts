@@ -9,8 +9,8 @@ import {
     UsePipes,
     ValidationPipe
   } from '@nestjs/common';
-  import { VerificationLogsService } from '../services/verification-logs.service';
-  import { CreateVerificationLogDto } from '../data_transfer_objects/create-verification-log.dto';
+import { VerificationLogsService } from '../services/verification-logs.service';
+import { CreateVerificationLogDto } from '../dtos/create-verification-log.dto';
   
   /**
    * Handles HTTP requests for verification logs

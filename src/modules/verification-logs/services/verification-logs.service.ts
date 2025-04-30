@@ -3,8 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VerificationLog } from '../../../entities/verification-log.entity';
-import { CreateVerificationLogDto } from '../data_transfer_objects/create-verification-log.dto';
-
+import { CreateVerificationLogDto } from '../dtos/create-verification-log.dto';
 @Injectable()
 export class VerificationLogsService {
   private readonly logger = new Logger(VerificationLogsService.name);
