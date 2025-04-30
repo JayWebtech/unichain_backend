@@ -7,6 +7,9 @@ import {
   WalletLoginDto,
 } from './dto/auth.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { SignupAdminDto } from './dto/admin-signup.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { LoginAdminDto } from './dto/admin-login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -49,5 +52,20 @@ export class AuthController {
       walletLoginDto.email,
       walletLoginDto.walletAddress,
     );
+  }
+
+  @Post("admin/signup")
+  async signupAdmin(@Body() signupAdminDto: SignupAdminDto){
+      return this.authService.signupAdmin(signupAdminDto);
+  }
+
+  @Post('admin/login')
+  async loginAdmin(@Body() loginAdminDto: LoginAdminDto){
+      return this.authService.loginAdmin(loginAdminDto);
+  }
+
+  @Post('admin/verify-otp')
+  async verifyAdminOtp(@Body() verifyOtpDto: VerifyOtpDto){
+      return this.authService.verifyAdminOtp(verifyOtpDto);
   }
 }
