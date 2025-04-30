@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UniversityModule } from './modules/university/university.module';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
+import { VerificationLogsModule } from './modules/verification-logs/verification-logs.module'; // <-- New import
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,10 +16,11 @@ import { DatabaseModule } from './database/database.module';
       isGlobal: true,
       load: [appConfig],
     }),
-    DatabaseModule,
-    UsersModule,
+    DatabaseModule, // Existing database config
+    UsersModule,    // Existing modules
     AuthModule,
     UniversityModule,
+    VerificationLogsModule, // New module
   ],
   controllers: [AppController],
   providers: [AppService],
