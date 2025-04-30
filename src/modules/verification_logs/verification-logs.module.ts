@@ -5,13 +5,10 @@ import { VerificationLog } from '../../entities/verification-log.entity';
 import { VerificationLogsService } from './services/verification-logs.service';
 import { VerificationLogsController } from './controllers/verification-logs.controller';
 
-/**
- * Verification Logs Feature Module
- * - Configures TypeORM repository
- * - Provides service and controller
- */
 @Module({
-  imports: [TypeOrmModule.forFeature([VerificationLog])],
+  imports: [
+    TypeOrmModule.forFeature([VerificationLog]), // Clean feature-specific registration
+  ],
   providers: [VerificationLogsService],
   controllers: [VerificationLogsController],
 })
