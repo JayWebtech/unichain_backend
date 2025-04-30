@@ -8,6 +8,7 @@ import { UniversityModule } from './modules/university/university.module';
 import { SupportModule } from './modules/support/support.module';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
+import { CustomMailerModule } from './mailer/mailer.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,6 +21,7 @@ import { DatabaseModule } from './database/database.module';
     AuthModule,
     UniversityModule,
     SupportModule,
+    CustomMailerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
