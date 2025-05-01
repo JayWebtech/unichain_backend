@@ -39,8 +39,8 @@ export class AuthService {
     private adminRepository: Repository<Admin>,
     @InjectRepository(OTP)
     private otpRepository: Repository<OTP>,
-    private otpUtil: OTPUtil, 
-    private readonly mailService:MailService
+    private otpUtil: OTPUtil,
+    private readonly mailService: MailService,
   ) {}
 
   private checkRateLimit(
@@ -69,7 +69,10 @@ export class AuthService {
     }
   }
 
-  async validatePassword(email: string, password: string): Promise<{ token: string }> {
+  async validatePassword(
+    email: string,
+    password: string,
+  ): Promise<{ token: string }> {
     this.checkRateLimit(
       email,
       this.passwordAttempts,
@@ -114,7 +117,8 @@ export class AuthService {
     user.otpAttempts = 0;
     await this.usersRepository.save(user);
 
-    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
+    const isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
 
     return {
       message: 'OTP sent successfully',
@@ -138,7 +142,9 @@ export class AuthService {
     }
 
     if (user.otpAttempts >= 3) {
-      throw new BadRequestException('Too many failed attempts. Request a new OTP');
+      throw new BadRequestException(
+        'Too many failed attempts. Request a new OTP',
+      );
     }
 
     const isMatch = await bcrypt.compare(otp, user.otp);
@@ -156,14 +162,19 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async validateWalletAddress(email: string, walletAddress: string): Promise<{ token: string }> {
+  async validateWalletAddress(
+    email: string,
+    walletAddress: string,
+  ): Promise<{ token: string }> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
     if (!user.walletAddress) {
-      throw new BadRequestException('No wallet address registered for this user');
+      throw new BadRequestException(
+        'No wallet address registered for this user',
+      );
     }
 
     try {
@@ -173,7 +184,9 @@ export class AuthService {
     }
 
     if (walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
-      throw new UnauthorizedException('Wallet address does not match registered address');
+      throw new UnauthorizedException(
+        'Wallet address does not match registered address',
+      );
     }
 
     return this.generateToken(user);
@@ -184,148 +197,142 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     return { token };
   }
-  async signupAdmin(signupAdminDto: SignupAdminDto){
-    if (signupAdminDto.password !== signupAdminDto.passwordConfirm){
-        throw new BadRequestException("Passwords do not match")
+  async signupAdmin(signupAdminDto: SignupAdminDto) {
+    if (signupAdminDto.password !== signupAdminDto.passwordConfirm) {
+      throw new BadRequestException('Passwords do not match');
     }
 
-    const existingAdmin = await this.adminRepository.findOne({where: {email: signupAdminDto.email}})
+    const existingAdmin = await this.adminRepository.findOne({
+      where: { email: signupAdminDto.email },
+    });
 
-    if (existingAdmin){
-        throw new BadRequestException("Admin already exists")
+    if (existingAdmin) {
+      throw new BadRequestException('Admin already exists');
     }
 
     // hash password
-    const hashedPassword = await bcrypt.hash(signupAdminDto.password, 10)
+    const hashedPassword = await bcrypt.hash(signupAdminDto.password, 10);
 
     // create new admin
     const admin = this.adminRepository.create({
-        email: signupAdminDto.email,
-        password: hashedPassword,
-    })
+      email: signupAdminDto.email,
+      password: hashedPassword,
+    });
 
-    // save admin 
+    // save admin
     await this.adminRepository.save(admin);
 
     // geneare and send otp for signup verificaition
     const otpCode = this.otpUtil.generateOTP();
     const expiresAt = this.otpUtil.getOTPExpiration();
     const otp = this.otpRepository.create({
-        code: otpCode,
-        expiresAt,
-        admin
-    })
+      code: otpCode,
+      expiresAt,
+      admin,
+    });
 
     await this.otpRepository.save(otp);
     // console.log(`SIGNUP OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
-    
+
     // send otp to admin email
     await this.mailService.sendOtpEmail(admin.email, otpCode);
 
     return {
-        message: "Admin created successfully. OTP sent to email for verification",
-        email: admin.email,
-    }
-    
-    
-    
-    
-    
-}
+      message: 'Admin created successfully. OTP sent to email for verification',
+      email: admin.email,
+    };
+  }
 
-async validateAdmin(email:string, password:string){
-    const admin =  await this.adminRepository.findOne({where:{email}})
+  async validateAdmin(email: string, password: string) {
+    const admin = await this.adminRepository.findOne({ where: { email } });
 
-    if (!admin){ 
-        throw new UnauthorizedException('Invalid credentials');
+    if (!admin) {
+      throw new UnauthorizedException('Invalid credentials');
     }
     const isPasswordValid = await bcrypt.compare(password, admin.password);
-      if (!isPasswordValid){
-        throw new UnauthorizedException("Invalid credentials")
-      }
-    return admin 
-} 
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return admin;
+  }
 
+  async loginAdmin(loginAdminDto: LoginAdminDto) {
+    const admin = await this.validateAdmin(
+      loginAdminDto.email,
+      loginAdminDto.password,
+    );
 
-async loginAdmin(loginAdminDto: LoginAdminDto){ 
-    const admin = await this.validateAdmin(loginAdminDto.email, loginAdminDto.password);
-
-    // generate and save otp 
+    // generate and save otp
     const otpCode = this.otpUtil.generateOTP();
-    const expiresAt= this.otpUtil.getOTPExpiration();
+    const expiresAt = this.otpUtil.getOTPExpiration();
 
     const otp = this.otpRepository.create({
-        code: otpCode,
-        expiresAt,
-        admin
-    })
+      code: otpCode,
+      expiresAt,
+      admin,
+    });
     await this.otpRepository.save(otp);
     // console.log(`LOGIN OTP FOR ${admin.email}: ${otpCode} (Expires at: ${expiresAt})`);
 
-    
     await this.mailService.sendOtpEmail(admin.email, otpCode);
-            
+
     return {
-        message : "OTP sent to your email", 
-        email : admin.email, 
-    }
-
-    
-    
-}
-async verifyAdminOtp (verifyOtpDto: VerifyOtpDto){
+      message: 'OTP sent to your email',
+      email: admin.email,
+    };
+  }
+  async verifyAdminOtp(verifyOtpDto: VerifyOtpDto) {
     const admin = await this.adminRepository.findOne({
-        where: {email: verifyOtpDto.email},
-        relations: ['otps'],
-    })
+      where: { email: verifyOtpDto.email },
+      relations: ['otps'],
+    });
 
-    if (!admin){
-        throw new UnauthorizedException("Admin not found")
+    if (!admin) {
+      throw new UnauthorizedException('Admin not found');
     }
 
     // find the recent otp
     const otp = await this.otpRepository.findOne({
-        where: {
-            admin : {id :admin.id},
-            isUsed: false,
-        },
-        order: {
-            createdAt: 'DESC',
-        },
-    })
+      where: {
+        admin: { id: admin.id },
+        isUsed: false,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
 
-    if (!otp){
-        throw new UnauthorizedException("No active OTP found")
+    if (!otp) {
+      throw new UnauthorizedException('No active OTP found');
     }
-    if (this.otpUtil.isOTPExpired(otp.expiresAt)){
-        throw new UnauthorizedException("OTP expired")
+    if (this.otpUtil.isOTPExpired(otp.expiresAt)) {
+      throw new UnauthorizedException('OTP expired');
     }
-    if (otp.code !== verifyOtpDto.otp){
-        throw new UnauthorizedException("Invalid OTP")
+    if (otp.code !== verifyOtpDto.otp) {
+      throw new UnauthorizedException('Invalid OTP');
     }
 
     // mark otp as used
     otp.isUsed = true;
     await this.otpRepository.save(otp);
-    
-    if (!admin.isVerified){
-        admin.isVerified = true;
-        await this.adminRepository.save(admin);
+
+    if (!admin.isVerified) {
+      admin.isVerified = true;
+      await this.adminRepository.save(admin);
     }
 
     // generate and sign jwt token
     const payload = {
-        email : admin.email,
-        sub : admin.id,
-        isVerified : admin.isVerified,
-    }
-    const accessToken = this.jwtService.sign(payload)
+      email: admin.email,
+      sub: admin.id,
+      isVerified: admin.isVerified,
+    };
+    const accessToken = this.jwtService.sign(payload);
 
     return {
-        accessToken,
-        email : admin.email,
-        isVerified : admin.isVerified,
-    }
-}
-
+      accessToken,
+      email: admin.email,
+      isVerified: admin.isVerified,
+    };
+  }
 }

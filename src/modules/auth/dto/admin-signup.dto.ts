@@ -1,5 +1,13 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, Validate } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  Validate,
+} from 'class-validator';
 import { MatchPassword } from '../validators/password.validator';
+import { Role } from '../entities/admin.entity';
 export class SignupAdminDto {
   @IsEmail()
   @IsNotEmpty()
@@ -15,4 +23,7 @@ export class SignupAdminDto {
   @MinLength(8)
   @Validate(MatchPassword, ['password'])
   passwordConfirm: string;
+
+  @IsEnum(Role)
+  role?: Role.ADMIN | Role.SUPER_ADMIN;
 }
