@@ -1,6 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+} from 'typeorm';
 import { OTP } from './otp.entity';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { University } from '../../university/entities/university.entity';
+
+export enum Role {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  UNIVERSITY_ADMIN = 'UNIVERSITY_ADMIN',
+  USER = 'USER',
+}
 
 @Entity('admins')
 export class Admin {
@@ -8,13 +23,22 @@ export class Admin {
   id: string;
 
   @Column({ unique: true })
-  @IsEmail()
   email: string;
 
   @Column()
-  @IsString()
-  @MinLength(8)
   password: string;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.ADMIN,
+  })
+  role?: Role;
+
+  @ManyToOne(() => University, (university) => university.admins, {
+    nullable: true,
+  })
+  university?: University;
 
   @Column({ default: false })
   isVerified: boolean;
