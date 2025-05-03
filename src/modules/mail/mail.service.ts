@@ -65,4 +65,23 @@ export class MailService {
       return false;
     }
   }
+  async sendSecreteKey(email: string, key: string): Promise<boolean> {
+    try {
+      await this.transporter.sendMail({
+        from: `"Certiva" <${this.configService.get('SMTP_FROM_EMAIL')}>`,
+        to: email,
+        subject: 'Your Secret Key',
+        html: `
+          <div>
+            <h2>Your One-Time Password (OTP)</h2>
+            <p>Your secret is: <strong>${key}</strong></p>
+          </div>
+        `,
+      });
+      return true;
+    } catch (error) {
+      console.error('Email sending failed:', error);
+      return false;
+    }
+  }
 }
