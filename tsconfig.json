@@ -6,7 +6,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es2017",
+    "target": "es2021",  // Valid value: es2021
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": ".",
@@ -26,4 +26,6 @@
   },
   "include": ["src/**/*", "*.ts"],
   "exclude": ["node_modules", "dist"]
+    "noFallthroughCasesInSwitch": false
+  }
 }
