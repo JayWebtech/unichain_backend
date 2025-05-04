@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { University } from './entities/university.entity';
 import { CreateUniversityDTO } from './dtos/create-university.dto';
+import { MailService } from '../mail/mail.service';
+import { SendSecretKeysDTO } from './dtos/send-secret-keys.dto';
 
 type UniversityResponse = Omit<University, 'password'>;
 
@@ -12,6 +14,7 @@ export class UniversityService {
   constructor(
     @InjectRepository(University)
     private universityRepository: Repository<University>,
+    private readonly mailService: MailService,
   ) {}
 
   async registerUniversity(data: CreateUniversityDTO): Promise<UniversityResponse> {
@@ -36,5 +39,24 @@ export class UniversityService {
     // Exclude password from the returned data
     const { password, ...universityWithoutPassword } = savedUniversity;
     return universityWithoutPassword;
+  }
+
+  async sendSecretKeys(data: SendSecretKeysDTO): Promise<{ message: string; results: { email: string; success: boolean }[] }> {
+    const results = await Promise.all(
+      data.data.map(async ({ email, secretKey }) => {
+        try {
+          await this.mailService.sendSecreteKey(email, secretKey);
+          return { email, success: true };
+        } catch (error) {
+          console.error(`Failed to send secret key to ${email}:`, error);
+          return { email, success: false };
+        }
+      })
+    );
+
+    return {
+      message: 'Secret keys sending process completed',
+      results,
+    };
   }
 }
