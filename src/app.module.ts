@@ -9,6 +9,7 @@ import { UniversityModule } from './modules/university/university.module';
 import { SupportModule } from './modules/support/support.module';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
+import { VerificationModule } from './modules/verification/verification.module';
 import { VerificationLogsModule } from './modules/verification-logs/verification-logs.module';
 import { CustomMailerModule } from './mailer/mailer.module';
 import { MailModule } from './modules/mail/mail.module';
@@ -26,6 +27,7 @@ import { MailModule } from './modules/mail/mail.module';
     verification_logs
     VerificationLogsModule, // New module
     SupportModule,
+    VerificationModule,
     CustomMailerModule,
     MailModule,
   ],
